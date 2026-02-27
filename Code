@@ -1,0 +1,57 @@
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BMP280.h>
+#include <Adafruit_BME280.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+// Kies hier welke sensor je gebruikt:
+#define USE_BMP280   // comment deze regel uit als je een BME280 hebt
+const int ldrPin = A0;
+#ifdef USE_BMP280
+Adafruit_BMP280 sensor;
+#else
+Adafruit_BME280 sensor;
+#endif
+
+#define LED_HEAT 8
+#define FAN 9
+
+int analogPin = 0;  // Set the pin on which we will receive the analog data 
+float tempC, tempK;
+
+void setup() {
+    lcd.clear();                 // clear display
+
+  lcd.init(); // initialize the lcd
+  lcd.backlight();
+  Serial.begin(9600);
+  // Start sensor
+  if (!sensor.begin(0x76)) {   // probeer 0x77 als dit niet werkt
+    Serial.println("Sensor niet gevonden!");
+    while (1);
+  }
+
+  Serial.println("Sensor gestart");
+}
+
+void loop() {
+  float T = sensor.readTemperature();
+
+  int raw = analogRead(analogPin);
+  
+  // Convert ADC reading to voltage (5V reference, 10-bit ADC)
+  float voltage = raw * (5.0 / 1023.0);
+  
+  // LM335 outputs 10mV/K, so divide voltage by 0.01
+  tempK = voltage / 0.01;  // Same as voltage * 100
+  tempC = tempK - 273.15;
+
+  lcd.setCursor(0, 0);         // move cursor to   (0, 0)
+  lcd.print("Temp1: "); lcd.print(T);
+  lcd.setCursor(0, 1);         // move cursor to   (2, 1)
+  lcd.print("Temp2: "); lcd.print(tempC); 
+
+  delay(500);
+
+}
